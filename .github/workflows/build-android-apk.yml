@@ -8,6 +8,7 @@ on:
       - 'tuktuk-persistence.patch'
       - 'tuktuk-fayoum-upgrade.patch'
       - 'tuktuk-fayoum-landmarks.patch'
+      - 'tuktuk-fayoum-stop-names.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -39,6 +40,7 @@ jobs:
           patch -d project -p1 < tuktuk-persistence.patch
           patch -d project -p1 < tuktuk-fayoum-upgrade.patch
           patch -d project -p1 < tuktuk-fayoum-landmarks.patch
+          patch -d project -p1 < tuktuk-fayoum-stop-names.patch
           cd project
           zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
       - name: Build web game
