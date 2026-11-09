@@ -1,0 +1,30 @@
+--- a/apk/main.tsx
++++ b/apk/main.tsx
+@@ -3,5 +3,27 @@
+ import { DarSalam } from "@/components/dar-salam";
+ import "@/styles.css";
+ 
++// On-device diagnostics: surface runtime failures that would otherwise leave
++// the WebGL scene blank inside Android WebView.
++function showRuntimeFailure(label: string, detail: string) {
++  let panel = document.getElementById("tuktuk-runtime-error");
++  if (!panel) {
++    panel = document.createElement("pre");
++    panel.id = "tuktuk-runtime-error";
++    panel.dir = "ltr";
++    panel.style.cssText = "position:fixed;z-index:2147483647;left:8px;right:8px;bottom:8px;max-height:42vh;overflow:auto;margin:0;padding:12px;border:2px solid #f0b429;border-radius:10px;background:#171b22;color:#fff;font:12px/1.5 monospace;white-space:pre-wrap;word-break:break-word";
++    document.body.appendChild(panel);
++  }
++  panel.textContent = `TUKTUK DIAGNOSTICS\n${label}\n${detail || "No additional details"}`;
++}
++
++window.addEventListener("error", (event) => {
++  showRuntimeFailure("JAVASCRIPT ERROR", event.error?.stack || `${event.message} (${event.filename}:${event.lineno}:${event.colno})`);
++});
++window.addEventListener("unhandledrejection", (event) => {
++  const reason = event.reason;
++  showRuntimeFailure("UNHANDLED PROMISE", reason?.stack || String(reason));
++});
++
+ const root = document.getElementById("root");
+ if (root) createRoot(root).render(<StrictMode><DarSalam /></StrictMode>);
