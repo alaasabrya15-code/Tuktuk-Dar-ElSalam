@@ -103,8 +103,8 @@ jobs:
               namespace 'com.darsalam.tuktuk'
               compileSdk 35
               defaultConfig { applicationId 'com.darsalam.tuktuk'; minSdk 23; targetSdk 28; versionCode 2; versionName '1.1' }
-              dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
           }
+          dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
           EOF
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
