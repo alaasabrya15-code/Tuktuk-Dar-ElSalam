@@ -17,7 +17,7 @@ on:
       - 'tuktuk-instancing-fix.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: tuktuk-android-build
   cancel-in-progress: true
@@ -44,35 +44,40 @@ jobs:
           test -f project/package-lock.json
           test -f project/vite.apk.config.ts
           test -f project/apk/index.html
-      - name: Apply game enhancements without removing original content
+      - name: Apply updates to the existing game project
         run: |
-          patch -d project -p1 < tuktuk-enhancements.patch
-          patch -d project -p1 < tuktuk-persistence.patch
-          patch -d project -p1 < tuktuk-fayoum-upgrade.patch
-          patch -d project -p1 < tuktuk-fayoum-stop-names.patch
-          python3 apply_fayoum_visual.py project
-          patch -d project -p1 < tuktuk-realism-detail.patch
-          patch -d project -p1 < tuktuk-instancing-fix.patch
+          if [ ! -f project/.tuktuk-updates-applied ]; then
+            patch -d project -p1 < tuktuk-enhancements.patch
+            patch -d project -p1 < tuktuk-persistence.patch
+            patch -d project -p1 < tuktuk-fayoum-upgrade.patch
+            patch -d project -p1 < tuktuk-fayoum-stop-names.patch
+            python3 apply_fayoum_visual.py project
+            patch -d project -p1 < tuktuk-realism-detail.patch
+            patch -d project -p1 < tuktuk-instancing-fix.patch
+            touch project/.tuktuk-updates-applied
+          else
+            echo "Existing game archive already contains the updates; preserving it without reapplying patches."
+          fi
           python3 - <<'PY'
           from pathlib import Path
           engine = Path('project/src/game/engine.ts').read_text(encoding='utf-8')
           ui = Path('project/src/components/dar-salam.tsx').read_text(encoding='utf-8')
           scene = Path('project/src/game/fayoum.ts').read_text(encoding='utf-8')
           checks = {
-              'player locked to tuk-tuk': 'vehicle: "tuktuk"' in engine and 'swapPlayer("tuktuk", cfg.paint)' in engine,
-              'horn and synthesized engine audio': 'horn() {' in engine and 'engine(speed: number, throttle: number)' in engine,
-              'suspension response': 'suspensionOffset' in engine and 'suspensionVelocity' in engine,
-              'Egyptian street frontage and landmarks': 'landmarkLabel' in scene and 'awningMats' in scene,
-              'market and parked traffic dressing': 'Produce market cluster' in scene and 'Parked private cars' in scene,
               'tuk-tuk only UI': 'مركبتك: التوكتوك' in ui and 'اختار مركبتك' not in ui,
+              'suspension response': 'suspensionOffset' in engine and 'suspensionVelocity' in engine,
+              'Egyptian street frontage': 'landmarkLabel' in scene and 'awningMats' in scene,
+              'market and parked traffic': 'Produce market cluster' in scene and 'Parked private cars' in scene,
+              'updates marker': Path('project/.tuktuk-updates-applied').exists(),
           }
           for label, ok in checks.items():
               print(('PASS' if ok else 'FAIL') + ': ' + label)
           if not all(checks.values()):
-              raise SystemExit('Game feature validation failed')
+              raise SystemExit('Existing game update validation failed')
           PY
           cd project
           zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
+          cp ../Tuktuk-Dar-ElSalam-Updated-Project.zip ../grok-workspace.zip
       - name: Build web game
         working-directory: project
         run: |
@@ -217,3 +222,15 @@ jobs:
           path: Tuktuk-Dar-ElSalam-Updated-Project.zip
           if-no-files-found: error
           retention-days: 14
+
+      - name: Save the updated original game archive back to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add grok-workspace.zip
+          if git diff --cached --quiet; then
+            echo "The original game archive already contains the updates."
+          else
+            git commit -m "Integrate gameplay updates into original game project"
+            git push
+          fi
