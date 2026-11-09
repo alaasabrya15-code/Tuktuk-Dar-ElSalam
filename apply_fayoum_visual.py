@@ -149,4 +149,110 @@ if b < 0:
 s = s[:a] + s[b:]
 p.write_text(s, encoding="utf-8")
 
-print("Applied Fayoum Street corridor changes.")
+
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+
+# Fill both sides of the corridor with continuous, varied mid-rise blocks.
+needle = """  outer.meshes.forEach((m, i) => {"""
+dense = """  // Dense two-sided Dar El Salam frontage: one building about every 20 metres.
+  for (let i = 0; i < pts.length; i += 4) {
+    const p = pts[i];
+    const nxt = pts[(i + 8) % pts.length];
+    const bend = Math.abs(((nxt.yaw - p.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    if (bend > 0.22) continue;
+    const hsh = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
+    const rx = Math.cos(p.yaw);
+    const rz = -Math.sin(p.yaw);
+    for (const side of [-1, 1]) {
+      const idx = (i + (side > 0 ? 1 : 0)) % 5;
+      if (outer.counts[idx] >= 95) continue;
+      const floors = 3 + Math.floor(hsh * 5);
+      const height = floors * 2.75 + (hsh > 0.7 ? 1.2 : 0);
+      const depth = 8.5 + hsh * 3.5;
+      const width = 5.4 + (1 - hsh) * 2.2;
+      dummy.position.set(p.x + rx * side * (22.5 + hsh * 3), height / 2, p.z + rz * side * (22.5 + hsh * 3));
+      dummy.rotation.set(0, p.yaw + (hsh - 0.5) * 0.08, 0);
+      dummy.scale.set(width, height, depth);
+      dummy.updateMatrix();
+      outer.meshes[idx].setMatrixAt(outer.counts[idx]++, dummy.matrix);
+    }
+  }
+
+  outer.meshes.forEach((m, i) => {"""
+if s.count(needle) != 1:
+    raise SystemExit(f"fayoum.ts: expected one building finalize point, found {s.count(needle)}")
+s = s.replace(needle, dense, 1)
+
+# Add identifiable, correctly ordered civic/shopfront labels and a market cluster.
+needle = """  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"""
+visuals = """  // Grounded wayfinding for the documented Fayoum Street landmarks.
+  const landmarkLabel = (index: number, lat: number, title: string, sub: string, bg: string, width = 5.8) => {
+    const p = spot(track.stops[index].s, lat);
+    const map = shopTex(title, sub, bg, "#ffffff");
+    if (!map) return;
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, 1.55),
+      new THREE.MeshStandardMaterial({ map, roughness: 0.7, side: THREE.DoubleSide }),
+    );
+    sign.position.set(p.x, 4.15, p.z);
+    sign.rotation.y = p.yaw;
+    scene.add(sign);
+  };
+  landmarkLabel(1, 12.8, "محطة مترو دار السلام", "الخط الأول", "#a52b2b", 6.6);
+  landmarkLabel(2, 12.8, "مكتب صحة دار السلام", "خدمات المواطنين", "#176b56", 5.8);
+  landmarkLabel(3, 12.8, "سنترال دار السلام", "الشبكة الرئيسية", "#174c78", 5.8);
+  landmarkLabel(5, 13.8, "مجمع مدارس شارع الفيوم", "مدرسة جمال عبد الناصر", "#174c78", 7.2);
+  landmarkLabel(8, 13.4, "سوق الخضار", "خلف المدرسة المعمارية", "#1e8449", 5.8);
+  landmarkLabel(9, 13.0, "منطقة الملاءة", "نهاية شارع الفيوم", "#5d4037", 5.8);
+
+  // Produce market cluster behind the architecture school: striped canopies, poles and crates.
+  {
+    const roofMats = ["#1e8449", "#f0b429", "#c0392b", "#f4f1e7"].map(
+      (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.82, side: THREE.DoubleSide }),
+    );
+    const poleMat = new THREE.MeshStandardMaterial({ color: "#55504a", roughness: 0.8, metalness: 0.15 });
+    const crateMats = ["#a86b32", "#c9842a", "#8e5a2b"].map(
+      (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.9 }),
+    );
+    const fruitMats = ["#c0392b", "#e67e22", "#2f6b3a", "#f4d03f"].map(
+      (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.72 }),
+    );
+    for (let k = 0; k < 5; k++) {
+      const p = track.sample(track.stops[8].s + (k - 2) * 4.2);
+      const rx = Math.cos(p.yaw);
+      const rz = -Math.sin(p.yaw);
+      const cx = p.x + rx * 15.2;
+      const cz = p.z + rz * 15.2;
+      const stall = new THREE.Group();
+      stall.position.set(cx, 0, cz);
+      stall.rotation.y = p.yaw;
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.16, 2.8), roofMats[k % roofMats.length]);
+      roof.position.y = 2.65;
+      stall.add(roof);
+      for (const x of [-1.72, 1.72]) {
+        for (const z of [-1.2, 1.2]) {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.65, 6), poleMat);
+          pole.position.set(x, 1.32, z);
+          stall.add(pole);
+        }
+      }
+      for (let c = 0; c < 3; c++) {
+        const crate = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.52, 0.7), crateMats[(k + c) % crateMats.length]);
+        crate.position.set(-1.0 + c * 1.0, 0.38, 1.05);
+        stall.add(crate);
+        const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.19, 7, 6), fruitMats[(k + c) % fruitMats.length]);
+        fruit.position.set(-1.0 + c * 1.0, 0.78, 1.05);
+        stall.add(fruit);
+      }
+      scene.add(stall);
+    }
+  }
+
+  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"""
+if s.count(needle) != 1:
+    raise SystemExit(f"fayoum.ts: expected one bump section, found {s.count(needle)}")
+s = s.replace(needle, visuals, 1)
+p.write_text(s, encoding="utf-8")
+
+print("Applied Fayoum Street corridor and visual frontage changes.")
