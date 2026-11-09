@@ -13,6 +13,7 @@ on:
       - 'tuktuk-fayoum-stop-names.patch'
       - 'tuktuk-fayoum-full-visual.patch'
       - 'apply_fayoum_visual.py'
+      - 'tuktuk-realism-detail.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -49,6 +50,7 @@ jobs:
           patch -d project -p1 < tuktuk-fayoum-upgrade.patch
           patch -d project -p1 < tuktuk-fayoum-stop-names.patch
           python3 apply_fayoum_visual.py project
+          patch -d project -p1 < tuktuk-realism-detail.patch
           python3 - <<'PY'
           from pathlib import Path
           engine = Path('project/src/game/engine.ts').read_text(encoding='utf-8')
