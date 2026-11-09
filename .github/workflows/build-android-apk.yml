@@ -5,6 +5,7 @@ on:
     paths:
       - 'grok-workspace.zip'
       - 'tuktuk-enhancements.patch'
+      - 'tuktuk-persistence.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -33,6 +34,7 @@ jobs:
       - name: Apply game enhancements without removing original content
         run: |
           patch -d project -p1 < tuktuk-enhancements.patch
+          patch -d project -p1 < tuktuk-persistence.patch
           cd project
           zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
       - name: Build web game
