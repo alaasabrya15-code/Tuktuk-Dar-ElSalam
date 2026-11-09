@@ -149,3 +149,48 @@
        const g2 = g.clone();
        g2.position.x += rx * side * 0.7 + rz * 0.55;
        g2.position.z += rz * side * 0.7 - rx * 0.55;
+--- a/src/game/street.ts
++++ b/src/game/street.ts
+@@ -81,11 +81,11 @@
+ 
+   const pts = track.pts;
+-  for (let i = 8; i < pts.length; i += 7) {
++  for (let i = 5; i < pts.length; i += 5) {
+     const p = pts[i];
+     const nxt = pts[(i + 6) % pts.length];
+     const bend = Math.abs(((nxt.yaw - p.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+     if (bend > 0.18) continue;
+     const hsh = Math.abs(Math.sin(i * 9.17) * 43758.5453) % 1;
+     // right sidewalk spill (Egypt drives on the right)
+-    if (i % 14 === 8) {
++    if (i % 10 === 5) {
+       const lat = 5.55 + hsh * 0.7;
+       const at = side(p, lat, 0.55);
+       o.position.set(at.x, 0.55, at.z);
+@@ -104,7 +104,7 @@
+         produceCols.push(veg[(i + k) % veg.length]);
+       }
+     }
+-    if (i % 11 === 1) {
++    if (i % 8 === 1) {
+       const at = side(p, ROAD_HALF + 2.4, 0.7);
+       o.position.set(at.x, 0.7, at.z);
+       o.rotation.set(0, p.yaw, 0);
+@@ -116,7 +116,7 @@
+         clothCols.push(colors[(i + k) % colors.length]);
+       }
+     }
+-    if (i % 9 === 4) {
++    if (i % 7 === 3) {
+       const at = side(p, ROAD_HALF + 1.7, 0.22);
+       for (let k = 0; k < 3; k++) {
+         o.position.set(at.x, 0.18 + k * 0.28, at.z);
+@@ -127,7 +127,7 @@
+         stamp(gallons, o);
+       }
+     }
+-    if (i % 13 === 2) {
++    if (i % 10 === 2) {
+       const at = side(p, ROAD_HALF + 2.1, 0.42);
+       o.position.set(at.x, 0.42, at.z);
+       o.rotation.set(0, p.yaw + 0.4, 0);
