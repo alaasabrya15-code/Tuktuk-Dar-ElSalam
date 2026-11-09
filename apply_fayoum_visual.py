@@ -697,4 +697,104 @@ s = s.replace(marker, "\n" + school_campus + marker, 1)
 p.write_text(s, encoding="utf-8")
 
 
+
+# Add the documented post office, school traffic unit and Al-Mala'a minibus terminus.
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+extras = """
+  // Dar El Salam post office, documented among the street's daily public services.
+  {
+    const p = spot(track.streetLength * 0.24, 13.8);
+    const office = new THREE.Group();
+    office.position.set(p.x, 0, p.z);
+    office.rotation.y = p.yaw + Math.PI / 2;
+    const wall = new THREE.MeshStandardMaterial({ color: "#d8c8ad", roughness: 0.88 });
+    const redBand = new THREE.MeshStandardMaterial({ color: "#a83b32", roughness: 0.72 });
+    const glass = new THREE.MeshStandardMaterial({ color: "#426a78", roughness: 0.28 });
+    const block = new THREE.Mesh(new THREE.BoxGeometry(8.8, 5.2, 7.2), wall);
+    block.position.y = 2.6;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(8.95, 0.72, 7.35), redBand);
+    band.position.y = 4.2;
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.7, 0.14), dark);
+    door.position.set(0, 1.35, 3.65);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.45, 0.14), glass);
+    win.position.set(-2.5, 3.0, 3.65);
+    const signMap = shopTex("مكتب بريد دار السلام", "خدمات بريدية", "#a83b32", "#ffffff");
+    office.add(block, band, door, win);
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 1.25), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 4.95, 3.72);
+      office.add(sign);
+    }
+    scene.add(office);
+  }
+
+  // Traffic unit at the school complex, with a small blue-and-white booth.
+  {
+    const p = spot(track.stops[5].s, 16.5);
+    const unit = new THREE.Group();
+    unit.position.set(p.x, 0, p.z);
+    unit.rotation.y = p.yaw + Math.PI / 2;
+    const booth = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.8, 2.5), white);
+    booth.position.y = 1.4;
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.28, 2.7), dark);
+    roof.position.y = 2.85;
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.84, 0.52, 2.55), new THREE.MeshStandardMaterial({ color: "#174c78", roughness: 0.65 }));
+    stripe.position.y = 2.0;
+    const window = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.8, 1.15), teal);
+    window.position.set(-1.42, 1.65, 0);
+    unit.add(booth, roof, stripe, window);
+    const signMap = shopTex("وحدة مرور", "دار السلام", "#174c78", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.7, 0.9), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(-1.48, 2.75, 0);
+      sign.rotation.y = -Math.PI / 2;
+      unit.add(sign);
+    }
+    scene.add(unit);
+  }
+
+  // Informal minibus terminus at Al-Mala'a, the documented end-of-street stand.
+  {
+    const p = spot(track.stops[9].s, 18.2);
+    const stand = new THREE.Group();
+    stand.position.set(p.x, 0, p.z);
+    stand.rotation.y = p.yaw + Math.PI / 2;
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.18, 10.5), new THREE.MeshStandardMaterial({ color: "#d9d4c9", roughness: 0.82 }));
+    canopy.position.set(0, 3.0, 0);
+    const postMat = new THREE.MeshStandardMaterial({ color: "#686d70", roughness: 0.7, metalness: 0.2 });
+    for (const x of [-2.65, 2.65]) {
+      for (const z of [-4.7, 4.7]) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 3, 7), postMat);
+        post.position.set(x, 1.5, z);
+        stand.add(post);
+      }
+    }
+    const signMap = shopTex("موقف الميكروباصات", "منطقة الملاءة", "#174c78", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.35), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 3.9, 5.2);
+      stand.add(sign);
+    }
+    for (let i = 0; i < 3; i++) {
+      const van = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.8, 4.4), new THREE.MeshStandardMaterial({ color: ["#f1eee5", "#d8d8d2", "#e5e0d4"][i], roughness: 0.6 }));
+      body.position.y = 1.0;
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.68, 1.65), new THREE.MeshStandardMaterial({ color: "#496674", roughness: 0.25, metalness: 0.12 }));
+      glass.position.set(0, 1.78, -0.35);
+      van.add(body, glass);
+      van.position.set((i - 1) * 2.2, 0, -7.2);
+      stand.add(van);
+    }
+    stand.add(canopy);
+    scene.add(stand);
+  }
+"""
+marker = "\n  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"
+if s.count(marker) != 1:
+    raise SystemExit("fayoum.ts: public-service additions insertion point not unique")
+s = s.replace(marker, "\n" + extras + marker, 1)
+p.write_text(s, encoding="utf-8")
+
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
