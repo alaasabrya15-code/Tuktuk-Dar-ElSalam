@@ -877,3 +877,48 @@ replace_once("src/game/engine.ts",
   const sun = new THREE.DirectionalLight("#ffe6c2", 1.62);''')
 
 print("Applied Fayoum Street corridor and visual frontage changes.")
+
+
+# Add physical suspension response to the player tuk-tuk and its camera.
+replace_once("src/game/engine.ts",
+'''  let wheelSpin = 0;''',
+'''  let wheelSpin = 0;
+  let suspensionOffset = 0;
+  let suspensionVelocity = 0;''')
+
+replace_once("src/game/engine.ts",
+'''          player.speed *= 0.55;
+          shake = Math.max(shake, reduceMotion ? 0 : 0.3);''',
+'''          player.speed *= 0.55;
+          suspensionVelocity = Math.max(suspensionVelocity, 2.8);
+          shake = Math.max(shake, reduceMotion ? 0 : 0.3);''')
+
+replace_once("src/game/engine.ts",
+'''    shake = Math.max(0, shake - dt);
+
+    updateNpcs(dt, spec.length);''',
+'''    shake = Math.max(0, shake - dt);
+    // Spring-and-damper response: a short body bounce after speed bumps.
+    suspensionVelocity += (-suspensionOffset * 34 - suspensionVelocity * 8.5) * dt;
+    suspensionOffset += suspensionVelocity * dt;
+    suspensionOffset = Math.max(-0.045, Math.min(0.12, suspensionOffset));
+
+    updateNpcs(dt, spec.length);''')
+
+replace_once("src/game/engine.ts",
+'''    desired.set(player.x - fwX * back, height, player.z - fwZ * back);''',
+'''    desired.set(player.x - fwX * back, height + suspensionOffset * 0.45, player.z - fwZ * back);''')
+
+replace_once("src/game/engine.ts",
+'''    playerMesh.group.position.set(player.x, 0, player.z);
+    playerMesh.group.rotation.y = player.yaw;
+    playerMesh.group.rotation.z = steerVis * -0.045;
+    playerMesh.group.rotation.x = (player.speed > 1 ? -0.02 : 0.03) * Math.min(1, Math.abs(player.speed) / 20);''',
+'''    playerMesh.group.position.set(player.x, suspensionOffset, player.z);
+    playerMesh.group.rotation.y = player.yaw;
+    playerMesh.group.rotation.z = steerVis * -0.045;
+    const speedBlend = Math.min(1, Math.abs(player.speed) / 20);
+    playerMesh.group.rotation.x = (player.speed > 1 ? -0.02 : 0.03) * speedBlend
+      - Math.max(0, throttle) * 0.018 + suspensionVelocity * 0.012;''')
+
+print("Added tuk-tuk suspension and road-bump body response.")
