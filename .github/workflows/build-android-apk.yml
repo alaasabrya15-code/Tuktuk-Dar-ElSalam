@@ -138,7 +138,7 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setMediaPlaybackRequiresUserGesture(false);
-                  settings.setAllowFileAccess(false);
+                  settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(false);
                   settings.setLoadsImagesAutomatically(true);
                   settings.setSupportZoom(false);
