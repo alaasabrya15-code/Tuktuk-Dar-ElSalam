@@ -102,7 +102,8 @@ jobs:
           android {
               namespace 'com.darsalam.tuktuk'
               compileSdk 35
-              defaultConfig { applicationId 'com.darsalam.tuktuk'; minSdk 23; targetSdk 28; versionCode 1; versionName '1.0' }
+              defaultConfig { applicationId 'com.darsalam.tuktuk'; minSdk 23; targetSdk 28; versionCode 2; versionName '1.1' }
+              dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
           }
           EOF
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
@@ -121,6 +122,10 @@ jobs:
           import android.view.View;
           import android.webkit.WebView;
           import android.webkit.WebSettings;
+          import androidx.webkit.WebViewAssetLoader;
+          import androidx.webkit.WebViewClientCompat;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebResourceResponse;
           public class MainActivity extends Activity {
               @Override public void onCreate(Bundle state) {
                   super.onCreate(state);
@@ -130,9 +135,20 @@ jobs:
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
                   settings.setMediaPlaybackRequiresUserGesture(false);
-                  web.setWebViewClient(new android.webkit.WebViewClient());
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(false);
+                  settings.setLoadsImagesAutomatically(true);
+                  settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
+                      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                      .build();
+                  web.setWebViewClient(new WebViewClientCompat() {
+                      @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                          return loader.shouldInterceptRequest(request.getUrl());
+                      }
+                  });
                   setContentView(web);
-                  web.loadUrl("file:///android_asset/index.html");
+                  web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
               }
               @Override public void onBackPressed() { super.onBackPressed(); }
           }
