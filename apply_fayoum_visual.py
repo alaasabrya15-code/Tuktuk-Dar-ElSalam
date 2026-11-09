@@ -185,47 +185,7 @@ if s.count(needle) != 1:
 s = s.replace(needle, dense, 1)
 
 # Add identifiable, correctly ordered civic/shopfront labels and a market cluster.
-needle = """  // Parked private cars along the curb, as seen in the street reference photos.
-  {
-    const bodyMats = ["#f4f1ea", "#c7c4bc", "#8b9297", "#6b747b", "#b8a58d", "#263746"].map(
-      (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.58, metalness: 0.08 }),
-    );
-    const glassMat = new THREE.MeshStandardMaterial({ color: "#253c49", roughness: 0.22, metalness: 0.16 });
-    const tireMat = new THREE.MeshStandardMaterial({ color: "#17191c", roughness: 0.88 });
-    const lampMat = new THREE.MeshStandardMaterial({ color: "#f6e8bd", emissive: "#c6a66c", emissiveIntensity: 0.12 });
-    for (let i = 0; i < 12; i++) {
-      const sm = track.sample(105 + i * 176);
-      const side = i % 2 === 0 ? -1 : 1;
-      const car = new THREE.Group();
-      car.position.set(
-        sm.x + Math.cos(sm.yaw) * side * (ROAD_HALF - 1.15),
-        0,
-        sm.z - Math.sin(sm.yaw) * side * (ROAD_HALF - 1.15),
-      );
-      car.rotation.y = sm.yaw;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.82, 4.05), bodyMats[i % bodyMats.length]);
-      body.position.y = 0.72;
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.76, 2.05), glassMat);
-      cabin.position.set(0, 1.43, -0.12);
-      car.add(body, cabin);
-      for (const x of [-0.83, 0.83]) {
-        for (const z of [-1.28, 1.28]) {
-          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.18, 10), tireMat);
-          wheel.rotation.z = Math.PI / 2;
-          wheel.position.set(x, 0.36, z);
-          car.add(wheel);
-        }
-      }
-      for (const x of [-0.55, 0.55]) {
-        const headlamp = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.06), lampMat);
-        headlamp.position.set(x, 0.82, 2.04);
-        car.add(headlamp);
-      }
-      scene.add(car);
-    }
-  }
-
-  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"""
+needle = """  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"""
 visuals = """  // Grounded wayfinding for the documented Fayoum Street landmarks.
   const landmarkLabel = (index: number, lat: number, title: string, sub: string, bg: string, width = 5.8) => {
     const p = spot(track.stops[index].s, lat);
@@ -286,6 +246,46 @@ visuals = """  // Grounded wayfinding for the documented Fayoum Street landmarks
         stall.add(fruit);
       }
       scene.add(stall);
+    }
+  }
+
+  // Parked private cars along the curb, as seen in the street reference photos.
+  {
+    const bodyMats = ["#f4f1ea", "#c7c4bc", "#8b9297", "#6b747b", "#b8a58d", "#263746"].map(
+      (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.58, metalness: 0.08 }),
+    );
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#253c49", roughness: 0.22, metalness: 0.16 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: "#17191c", roughness: 0.88 });
+    const lampMat = new THREE.MeshStandardMaterial({ color: "#f6e8bd", emissive: "#c6a66c", emissiveIntensity: 0.12 });
+    for (let i = 0; i < 12; i++) {
+      const sm = track.sample(105 + i * 176);
+      const side = i % 2 === 0 ? -1 : 1;
+      const car = new THREE.Group();
+      car.position.set(
+        sm.x + Math.cos(sm.yaw) * side * (ROAD_HALF - 1.15),
+        0,
+        sm.z - Math.sin(sm.yaw) * side * (ROAD_HALF - 1.15),
+      );
+      car.rotation.y = sm.yaw;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.82, 4.05), bodyMats[i % bodyMats.length]);
+      body.position.y = 0.72;
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.76, 2.05), glassMat);
+      cabin.position.set(0, 1.43, -0.12);
+      car.add(body, cabin);
+      for (const x of [-0.83, 0.83]) {
+        for (const z of [-1.28, 1.28]) {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.18, 10), tireMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(x, 0.36, z);
+          car.add(wheel);
+        }
+      }
+      for (const x of [-0.55, 0.55]) {
+        const headlamp = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.06), lampMat);
+        headlamp.position.set(x, 0.82, 2.04);
+        car.add(headlamp);
+      }
+      scene.add(car);
     }
   }
 
