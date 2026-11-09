@@ -132,7 +132,8 @@ jobs:
           EOF
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="توكتوك دار السلام" android:usesCleartextTraffic="true">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:hardwareAccelerated="true" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="توكتوك دار السلام" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true">
                       <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
                   </activity>
@@ -150,6 +151,8 @@ jobs:
           import androidx.webkit.WebViewClientCompat;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebResourceResponse;
+          import android.webkit.WebChromeClient;
+          import android.util.Log;
           public class MainActivity extends Activity {
               @Override public void onCreate(Bundle state) {
                   super.onCreate(state);
@@ -163,12 +166,27 @@ jobs:
                   settings.setAllowContentAccess(false);
                   settings.setLoadsImagesAutomatically(true);
                   settings.setJavaScriptCanOpenWindowsAutomatically(false);
+                  settings.setSupportZoom(false);
+                  settings.setBuiltInZoomControls(false);
+                  settings.setDisplayZoomControls(false);
+                  settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+                  web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                  WebView.setWebContentsDebuggingEnabled(true);
                   WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                       .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                       .build();
+                  web.setWebChromeClient(new WebChromeClient() {
+                      @Override public boolean onConsoleMessage(android.webkit.ConsoleMessage message) {
+                          Log.e("TuktukWeb", message.message() + " at " + message.sourceId() + ":" + message.lineNumber());
+                          return true;
+                      }
+                  });
                   web.setWebViewClient(new WebViewClientCompat() {
                       @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                           return loader.shouldInterceptRequest(request.getUrl());
+                      }
+                      @Override public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
+                          Log.e("TuktukWeb", "Load error: " + request.getUrl() + " - " + error.getDescription());
                       }
                   });
                   setContentView(web);
