@@ -135,7 +135,7 @@ index c0c0c7e..608cfee 100644
 +  const segStraight = 440;
 +  const segArc = 36;
    const raw: { x: number; z: number }[] = [];
-@@ -88,12 +91,11 @@ export function buildTrack(): Track {
+@@ -91,12 +94,11 @@ export function buildTrack(): Track {
    }
    const total = s;
  
@@ -154,7 +154,7 @@ index c0c0c7e..608cfee 100644
 +  const gasS = straight * 0.48;
 +  // The documented speed-bump cluster is concentrated by the school complex.
 +  const bumps = [0.565, 0.585, 0.605, 0.625].map((t) => t * straight);
-@@ -158,4 +160,4 @@ export function buildTrack(): Track {
+@@ -161,4 +163,4 @@ export function buildTrack(): Track {
      return near;
    }
  
