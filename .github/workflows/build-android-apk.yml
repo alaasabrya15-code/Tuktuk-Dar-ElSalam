@@ -15,7 +15,6 @@ on:
       - 'apply_fayoum_visual.py'
       - 'tuktuk-realism-detail.patch'
       - 'tuktuk-instancing-fix.patch'
-      - 'tuktuk-runtime-fixes.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -54,7 +53,6 @@ jobs:
           python3 apply_fayoum_visual.py project
           patch -d project -p1 < tuktuk-realism-detail.patch
           patch -d project -p1 < tuktuk-instancing-fix.patch
-          patch -d project -p1 < tuktuk-runtime-fixes.patch
           python3 - <<'PY'
           from pathlib import Path
           engine = Path('project/src/game/engine.ts').read_text(encoding='utf-8')
