@@ -135,7 +135,7 @@ index c0c0c7e..608cfee 100644
 +  const segStraight = 440;
 +  const segArc = 36;
    const raw: { x: number; z: number }[] = [];
-@@ -88,12 +91,10 @@ export function buildTrack(): Track {
+@@ -88,12 +91,11 @@ export function buildTrack(): Track {
    }
    const total = s;
  
