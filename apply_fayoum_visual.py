@@ -493,11 +493,12 @@ s = s[:a] + admin + s[b:]
 
 # The end stop is a road transition, not a fabricated cafe landmark.
 a = s.find("  put(10, 12.2, (g) => {")
-b = s.find("\n\n  {\\n    const p = spot(track.gasS", a)
-if a >= 0 and b >= 0:
-    s = s[:a] + s[b+2:]
+b = s.find("const p = spot(track.gasS", a)
+c = s.rfind("  {", a, b) if b >= 0 else -1
+if a >= 0 and b >= 0 and c >= 0:
+    s = s[:a] + s[c:]
 elif a >= 0:
-    raise SystemExit("fayoum.ts: cafe landmark end marker not found")
+    raise SystemExit("fayoum.ts: cafe landmark / gas station boundary not found")
 
 # Add the documented three-building St Mina / St Augustine church compound.
 church = """
