@@ -1,0 +1,113 @@
+--- a/src/game/engine.ts
++++ b/src/game/engine.ts
+@@ -7,6 +7,7 @@
+   SHIFT_SECONDS,
+   UPGRADES,
+   type Hud,
++  type Mode,
+   type Pax,
+   type Phase,
+   type PreviewCfg,
+@@ -71,6 +72,11 @@
+   sound: boolean;
+   wallet: number;
+   upgrades: Upgrades;
++  selectedVehicle: VehicleId;
++  selectedMode: Mode;
++  selectedNight: boolean;
++  selectedDensity: number;
++  paint: string;
+ };
+ 
+ function blankUpgrades(): Upgrades {
+@@ -91,6 +97,11 @@
+     sound: true,
+     wallet: 0,
+     upgrades: blankUpgrades(),
++    selectedVehicle: "tuktuk",
++    selectedMode: "shift",
++    selectedNight: false,
++    selectedDensity: 1,
++    paint: "#f0b429",
+   };
+   try {
+     const raw = localStorage.getItem(SAVE_KEY);
+@@ -105,6 +116,11 @@
+       bestTrial: typeof p.bestTrial === "number" ? p.bestTrial : null,
+       sound: p.sound !== false,
+       wallet: Math.max(0, Math.floor(Number(p.wallet) || 0)),
++      selectedVehicle: ["malaky", "taxi", "micro", "tuktuk", "truck"].includes(String(p.selectedVehicle)) ? p.selectedVehicle as VehicleId : "tuktuk",
++      selectedMode: ["shift", "cruise", "rush"].includes(String(p.selectedMode)) ? p.selectedMode as Mode : "shift",
++      selectedNight: p.selectedNight === true,
++      selectedDensity: p.selectedDensity == null ? 1 : Math.max(0, Math.min(2, Math.floor(Number(p.selectedDensity) || 0))),
++      paint: typeof p.paint === "string" && /^#[0-9a-fA-F]{6}$/.test(p.paint) ? p.paint : "#f0b429",
+       upgrades: {
+         motor: clampLvl(u.motor),
+         fuel: clampLvl(u.fuel),
+@@ -628,7 +644,7 @@
+     spin: 0,
+   };
+ 
+-  let cfg: PreviewCfg = { ...defaultCfg, sound: save.sound };
++  let cfg: PreviewCfg = { ...defaultCfg, vehicle: save.selectedVehicle, mode: save.selectedMode, night: save.selectedNight, density: save.selectedDensity, paint: save.paint, sound: save.sound };
+   let phase: Phase = "menu";
+   let money = 0;
+   let km = 0;
+@@ -962,6 +978,12 @@
+   function start(next: PreviewCfg) {
+     cfg = { ...next };
+     sfx.on = cfg.sound;
++    save.selectedVehicle = cfg.vehicle;
++    save.selectedMode = cfg.mode;
++    save.selectedNight = cfg.night;
++    save.selectedDensity = cfg.density;
++    save.paint = cfg.paint;
++    writeSave(save);
+     swapPlayer(cfg.vehicle, cfg.paint);
+     phase = "play";
+     const startS = track.stops[0].s + 18;
+@@ -1037,6 +1059,9 @@
+       hint,
+       mode: cfg.mode,
+       vehicleName: spec.name,
++      vehicleId: cfg.vehicle,
++      paint: cfg.paint,
++      density: cfg.density,
+       message: messageT > 0 ? message : "",
+       alert: alertT > 0 ? alert : null,
+       fuel: Math.max(0, Math.min(100, fuel)),
+@@ -1805,6 +1830,11 @@
+       cfg = { ...next };
+       sfx.on = cfg.sound;
+       save.sound = cfg.sound;
++      save.selectedVehicle = cfg.vehicle;
++      save.selectedMode = cfg.mode;
++      save.selectedNight = cfg.night;
++      save.selectedDensity = cfg.density;
++      save.paint = cfg.paint;
+       writeSave(save);
+       if ((paintChanged || vehicleChanged) && phase === "menu") swapPlayer(cfg.vehicle, cfg.paint);
+       if (nightChanged) applyDusk(duskNow());
+--- a/src/game/types.ts
++++ b/src/game/types.ts
+@@ -166,6 +166,9 @@
+   hint: string;
+   mode: Mode;
+   vehicleName: string;
++  vehicleId: VehicleId;
++  paint: string;
++  density: number;
+   message: string;
+   alert: null | "radar" | "crash" | "cash" | "fuel";
+   fuel: number;
+--- a/src/components/dar-salam.tsx
++++ b/src/components/dar-salam.tsx
+@@ -65,7 +65,7 @@
+       handle = mountGame(canvas, map, setSnap);
+       gameRef.current = handle;
+       const heard = handle.getHud();
+-      setCfg((c) => ({ ...c, sound: heard.sound }));
++      setCfg((c) => ({ ...c, sound: heard.sound, vehicle: heard.vehicleId, paint: heard.paint, mode: heard.mode, night: heard.night, density: heard.density }));
+       setReady(true);
+     });
+     return () => {
