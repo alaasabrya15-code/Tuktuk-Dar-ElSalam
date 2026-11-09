@@ -78,6 +78,28 @@ jobs:
         run: |
           npm ci
           npx vite build --config vite.apk.config.ts
+      - name: Verify the actual game bundle was built
+        working-directory: project
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          dist = Path("apk/dist")
+          html = (dist / "index.html").read_text(encoding="utf-8")
+          assets = dist / "assets"
+          engines = list(assets.glob("engine-*.js"))
+          apps = list(assets.glob("index-*.js"))
+          styles = list(assets.glob("index-*.css"))
+          assert len(engines) == 1, f"Expected one game engine bundle, got {len(engines)}"
+          assert len(apps) == 1, f"Expected one app bundle, got {len(apps)}"
+          assert len(styles) == 1, f"Expected one stylesheet, got {len(styles)}"
+          assert engines[0].stat().st_size > 500_000, "Game engine bundle is unexpectedly small"
+          assert apps[0].stat().st_size > 150_000, "Application bundle is unexpectedly small"
+          assert engines[0].name in html and apps[0].name in html and styles[0].name in html, "index.html does not reference all built bundles"
+          print(f"PASS: game engine {engines[0].stat().st_size:,} bytes")
+          print(f"PASS: app code {apps[0].stat().st_size:,} bytes")
+          print(f"PASS: styles {styles[0].stat().st_size:,} bytes")
+          PY
       - name: Create Android WebView wrapper
         run: |
           mkdir -p android-app/app/src/main/assets android-app/app/src/main/java/com/darsalam/tuktuk
@@ -158,6 +180,13 @@ jobs:
           cd android-app
           gradle wrapper --gradle-version 8.9
           ./gradlew assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          mkdir -p apk-check
+          unzip -q app/build/outputs/apk/debug/app-debug.apk -d apk-check
+          test -s apk-check/assets/index.html
+          test $(find apk-check/assets/assets -maxdepth 1 -name 'engine-*.js' -size +500k | wc -l) -eq 1
+          test $(find apk-check/assets/assets -maxdepth 1 -name 'index-*.js' -size +150k | wc -l) -eq 1
+          echo "PASS: APK contains the full game engine and application bundles"
       - uses: actions/upload-artifact@v4
         with:
           name: Tuktuk-Dar-ElSalam-APK
