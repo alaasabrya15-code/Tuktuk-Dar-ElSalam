@@ -337,4 +337,34 @@ replace_once("src/game/fayoum.ts",
 """dummy.position.set(p.x + rx * side * (22.5 + hsh * 3), height / 2, p.z + rz * side * (22.5 + hsh * 3));""",
 """dummy.position.set(p.x + rx * side * (ROAD_HALF + 7.2 + hsh * 0.8), height / 2, p.z + rz * side * (ROAD_HALF + 7.2 + hsh * 0.8));""")
 
+
+# Re-map the pre-existing landmark meshes to the corrected real-world stop order.
+replace_once("src/game/fayoum.ts", """  put(1, 10.6,""", """  put(0, 18.5,""")
+replace_once("src/game/fayoum.ts", """  put(2, 13.4,""", """  put(22, 13.4,""")
+replace_once("src/game/fayoum.ts", """  put(3, 13.2,""", """  put(2, 13.2,""")
+replace_once("src/game/fayoum.ts", """  put(22, 13.4,""", """  put(3, 13.4,""")
+replace_once("src/game/fayoum.ts", """  put(4, 13.4,""", """  put(44, 13.4,""")
+replace_once("src/game/fayoum.ts", """  put(5, 13.6,""", """  put(6, 13.6,""")
+replace_once("src/game/fayoum.ts", """  put(44, 13.4,""", """  put(5, 13.4,""")
+replace_once("src/game/fayoum.ts", """  put(6, 12.2,""", """  put(4, 12.2,""")
+
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+a = s.find("  put(7, 12.6, (g) => {")
+if a < 0:
+    raise SystemExit("fayoum.ts: old clinic landmark not found")
+b = s.find("\n  put(8, 12.4,", a)
+if b < 0:
+    raise SystemExit("fayoum.ts: next landmark after clinic not found")
+s = s[:a] + s[b:]
+a = s.find("  put(9, 11.8, (g) => {")
+if a < 0:
+    raise SystemExit("fayoum.ts: unverified bakery landmark not found")
+b = s.find("\n  put(10, 12.2,", a)
+if b < 0:
+    raise SystemExit("fayoum.ts: next landmark after bakery not found")
+s = s[:a] + s[b:]
+p.write_text(s, encoding="utf-8")
+
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
