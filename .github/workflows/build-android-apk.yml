@@ -1,7 +1,7 @@
 name: Build Tuktuk Dar ElSalam APK
 run-name: Build complete game and Android APK
 # Rebuild when the Fayoum Street visual script changes (stop mapping fixed).
-# Requested fresh APK build: 2026-11-09.
+# Requested fresh APK build from the original grok-workspace.zip project: 2026-11-09.
 on:
   workflow_dispatch:
   push:
