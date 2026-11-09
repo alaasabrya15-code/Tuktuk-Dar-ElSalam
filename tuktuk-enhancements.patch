@@ -90,3 +90,4 @@
                <div className="mt-2 flex flex-wrap items-center gap-2">
                  {PAINTS.map((p) => (
                    <button
+
