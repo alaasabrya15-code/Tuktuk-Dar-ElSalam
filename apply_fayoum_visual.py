@@ -369,4 +369,265 @@ s = s[:a] + s[b:]
 p.write_text(s, encoding="utf-8")
 
 
+
+# Correct the doubled frontage pass: use one two-sided instancing pass only.
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+a = s.find("  // Dense two-sided Dar El Salam frontage:")
+b = s.find("\n  outer.meshes.forEach((m, i) => {", a)
+if a < 0 or b < 0:
+    raise SystemExit("fayoum.ts: duplicate frontage pass not found")
+s = s[:a] + s[b+1:]
+old = "if (outer.counts[idx] < 95 && i % 5 === 0 && side === outward) {"
+if s.count(old) != 1:
+    raise SystemExit("fayoum.ts: original one-sided building placement not found")
+s = s.replace(old, "if (outer.counts[idx] < 95 && i % 5 === 0) {", 1)
+s = s.replace("    const outward = Math.sign(p.x * rx + p.z * rz) || 1;\n", "", 1)
+
+# Replace generic blocks with the correct civic buildings for the stop sequence.
+a = s.find("  put(3, 13.4, (g) => {")
+b = s.find("\n  put(5, 13.4,", a)
+if a < 0 or b < 0:
+    raise SystemExit("fayoum.ts: central/health landmark region not found")
+civic = """  // Dar El Salam metro entrance: stairs, ticket hall and red line fascia.
+  put(1, 13.2, (g) => {
+    const hall = new THREE.Mesh(new THREE.BoxGeometry(8.5, 3.1, 5.2), white);
+    hall.position.set(0, 1.55, -1.2);
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.24, 5.8), red);
+    canopy.position.set(0, 3.2, -1.2);
+    const stairMat = new THREE.MeshStandardMaterial({ color: "#9c9b96", roughness: 0.88 });
+    for (let k = 0; k < 7; k++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.16, 0.48), stairMat);
+      step.position.set(0, 0.12 + k * 0.16, 1.0 + k * 0.48);
+      g.add(step);
+    }
+    const signMap = shopTex("محطة مترو دار السلام", "الخط الأول", "#a52b2b", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.25), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 3.9, 1.55);
+      g.add(sign);
+    }
+    g.add(hall, canopy);
+  });
+
+  // Health office: low public-service building with a visible red cross.
+  put(2, 13.2, (g) => {
+    const block = new THREE.Mesh(new THREE.BoxGeometry(12, 6.2, 8), stone);
+    block.position.set(0, 3.1, -0.5);
+    const fascia = new THREE.Mesh(new THREE.BoxGeometry(12.15, 0.72, 8.12), green);
+    fascia.position.set(0, 5.25, -0.5);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.8, 0.18), dark);
+    door.position.set(0, 1.4, 3.58);
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.2, 0.12), white);
+    crossV.position.set(-4.4, 4.35, 3.62);
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.34, 0.12), white);
+    crossH.position.set(-4.4, 4.35, 3.62);
+    for (const x of [-2.8, 2.8]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.35, 0.12), teal);
+      win.position.set(x, 3.2, 3.62);
+      g.add(win);
+    }
+    g.add(block, fascia, door, crossV, crossH);
+  });
+
+  // Main telephone exchange: wider civic facade, rooftop aerials and a WE sign.
+  put(3, 13.4, (g) => {
+    const block = new THREE.Mesh(new THREE.BoxGeometry(15, 10, 9), concrete);
+    block.position.y = 5;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(15.2, 1.05, 9.2), teal);
+    band.position.set(0, 7.5, 0);
+    const entry = new THREE.Mesh(new THREE.BoxGeometry(2.1, 3.2, 0.2), dark);
+    entry.position.set(0, 1.6, 4.58);
+    for (const x of [-5.2, -2.6, 2.6, 5.2]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.65, 0.14), white);
+      win.position.set(x, 4.4, 4.6);
+      g.add(win);
+    }
+    const aerial = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 4.8, 7), dark);
+    aerial.position.set(5.7, 12.4, -2.4);
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(1.05, 10, 8), white);
+    dish.scale.set(1, 0.22, 1);
+    dish.position.set(-4.8, 10.9, -2.4);
+    const signMap = shopTex("WE", "سنترال دار السلام", "#5b2c83", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.5), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 8.2, 4.66);
+      g.add(sign);
+    }
+    g.add(block, band, entry, aerial, dish);
+  });
+"""
+s = s[:a] + civic + s[b:]
+
+# Replace the former stair prop with the education administration building.
+a = s.find("  put(4, 12.2, (g) => {")
+b = s.find("\n\n  put(8, 12.4,", a)
+if a < 0 or b < 0:
+    raise SystemExit("fayoum.ts: education administration prop not found")
+admin = """  put(4, 12.2, (g) => {
+    const block = new THREE.Mesh(new THREE.BoxGeometry(13, 8.5, 8.5), stone);
+    block.position.set(0, 4.25, -0.4);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.85, 8.7), "#174c78" as unknown as THREE.Material);
+    band.position.set(0, 6.8, -0.4);
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.1, 0.18), dark);
+    entrance.position.set(0, 1.55, 3.92);
+    for (const x of [-4.5, -2.4, 2.4, 4.5]) {
+      for (const y of [3.1, 5.5]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.05, 0.12), teal);
+        win.position.set(x, y, 3.95);
+        g.add(win);
+      }
+    }
+    const signMap = shopTex("الإدارة التعليمية", "دار السلام", "#174c78", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 1.4), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 7.45, 4.05);
+      g.add(sign);
+    }
+    g.add(block, band, entrance);
+  });"""
+# use a proper material for the fascia instead of a string cast
+admin = admin.replace('new THREE.MeshStandardMaterial({ color: "#174c78", roughness: 0.65 }) as unknown as THREE.Material', 'new THREE.MeshStandardMaterial({ color: "#174c78", roughness: 0.65 })')
+admin = admin.replace('new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.85, 8.7), "#174c78" as unknown as THREE.Material)', 'new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.85, 8.7), new THREE.MeshStandardMaterial({ color: "#174c78", roughness: 0.65 }))')
+s = s[:a] + admin + s[b:]
+
+# The end stop is a road transition, not a fabricated cafe landmark.
+a = s.find("  put(10, 12.2, (g) => {")
+b = s.find("\n\n  {\\n    const p = spot(track.gasS", a)
+if a >= 0 and b >= 0:
+    s = s[:a] + s[b+2:]
+elif a >= 0:
+    raise SystemExit("fayoum.ts: cafe landmark end marker not found")
+
+# Add the documented three-building St Mina / St Augustine church compound.
+church = """
+  // Church compound confirmed on Fayoum Street. Exact frontage chainage is approximate
+  // until a georeferenced street-level pin is available.
+  {
+    const p = spot(track.streetLength * 0.35, 16.2);
+    const compound = new THREE.Group();
+    compound.position.set(p.x, 0, p.z);
+    compound.rotation.y = p.yaw;
+    const plaster = new THREE.MeshStandardMaterial({ color: "#e4d8c4", roughness: 0.86 });
+    const trim = new THREE.MeshStandardMaterial({ color: "#b79d79", roughness: 0.78 });
+    const roof = new THREE.MeshStandardMaterial({ color: "#8c8173", roughness: 0.82 });
+    const glass = new THREE.MeshStandardMaterial({ color: "#426a78", roughness: 0.28, metalness: 0.12 });
+    const main = new THREE.Mesh(new THREE.BoxGeometry(10.5, 8.2, 13), plaster);
+    main.position.set(0, 4.1, 0);
+    const naveRoof = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.5, 13.3), roof);
+    naveRoof.position.set(0, 8.35, 0);
+    const apse = new THREE.Mesh(new THREE.BoxGeometry(5.4, 5.2, 5.2), plaster);
+    apse.position.set(0, 2.6, -8.8);
+    const admin = new THREE.Mesh(new THREE.BoxGeometry(6.2, 5.6, 6.5), trim);
+    admin.position.set(-9.1, 2.8, -1.2);
+    const service = new THREE.Mesh(new THREE.BoxGeometry(6.8, 4.8, 6), plaster);
+    service.position.set(9.0, 2.4, -1.5);
+    compound.add(main, naveRoof, apse, admin, service);
+    for (const x of [-3.4, 0, 3.4]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.15, 0.14), glass);
+      win.position.set(x, 4.5, 6.58);
+      compound.add(win);
+    }
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.2, 0.2), trim);
+    door.position.set(0, 1.6, 6.62);
+    compound.add(door);
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.14, 8, 18, Math.PI), trim);
+    arch.position.set(0, 3.35, 6.7);
+    arch.rotation.z = Math.PI;
+    compound.add(arch);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.15, 16, 9, 0, Math.PI * 2, 0, Math.PI / 2), roof);
+    dome.position.set(0, 8.55, -0.8);
+    compound.add(dome);
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(2.2, 4.5, 2.2), trim);
+    tower.position.set(4.1, 10.4, 3.8);
+    const towerCap = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.8, 8), roof);
+    towerCap.position.set(4.1, 13.55, 3.8);
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.55, 0.22), dark);
+    crossV.position.set(4.1, 15.15, 3.8);
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.22), dark);
+    crossH.position.set(4.1, 15.35, 3.8);
+    compound.add(tower, towerCap, crossV, crossH);
+    const signMap = shopTex("كنيسة مارمينا", "والقديس أغسطينوس", "#6b4b36", "#ffffff");
+    if (signMap) {
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 1.6), new THREE.MeshStandardMaterial({ map: signMap, side: THREE.DoubleSide }));
+      sign.position.set(0, 6.65, 6.72);
+      compound.add(sign);
+    }
+    scene.add(compound);
+  }
+
+  // Palm-lined frontage around the six-school complex, matching the documented planting.
+  {
+    const p = spot(track.stops[5].s, 17.2);
+    const group = new THREE.Group();
+    group.position.set(p.x, 0, p.z);
+    group.rotation.y = p.yaw;
+    const trunkMat = new THREE.MeshStandardMaterial({ color: "#765332", roughness: 0.92 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: "#2f673c", roughness: 0.82 });
+    for (let i = 0; i < 7; i++) {
+      const x = -18 + i * 6;
+      const h = 4.4 + (i % 3) * 0.35;
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.27, h, 7), trunkMat);
+      trunk.position.set(x, h / 2, 0);
+      group.add(trunk);
+      for (let f = 0; f < 7; f++) {
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.16, 3.2, 5), leafMat);
+        const angle = (f / 7) * Math.PI * 2;
+        leaf.position.set(x + Math.cos(angle) * 1.25, h + 0.45, Math.sin(angle) * 1.25);
+        leaf.rotation.z = Math.cos(angle) * 0.72;
+        leaf.rotation.x = Math.sin(angle) * 0.72;
+        group.add(leaf);
+      }
+    }
+    scene.add(group);
+  }
+"""
+marker = "\n  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"
+if s.count(marker) != 1:
+    raise SystemExit("fayoum.ts: church insertion marker not unique")
+s = s.replace(marker, "\n" + church + marker, 1)
+p.write_text(s, encoding="utf-8")
+
+# Add a busier school-gate crowd to the otherwise evenly distributed pedestrians.
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+end = s.rfind("\n}")
+if end < 0:
+    raise SystemExit("fayoum.ts: placePeople function end not found")
+crowd = """
+  // Extra parent/student groups at the school exits during the daytime route.
+  for (let j = 0; j < 28; j++) {
+    const stop = track.stops[j % 2 === 0 ? 5 : 6];
+    const sm = track.sample(stop.s + ((j % 7) - 3) * 2.1);
+    const side = j % 2 === 0 ? 1 : -1;
+    const rx = Math.cos(sm.yaw);
+    const rz = -Math.sin(sm.yaw);
+    const h = Math.abs(Math.sin(j * 8.31) * 43758.5453) % 1;
+    const person = new THREE.Group();
+    person.position.set(sm.x + rx * side * (ROAD_HALF + 3.1 + (j % 3) * 0.65), 0, sm.z + rz * side * (ROAD_HALF + 3.1 + (j % 3) * 0.65));
+    person.rotation.y = sm.yaw + (side > 0 ? Math.PI : 0) + (h - 0.5) * 0.8;
+    const scale = j % 4 === 0 ? 0.72 : 0.92 + h * 0.12;
+    person.scale.setScalar(scale);
+    const torso = new THREE.Mesh(bodyGeo, shirts[(j + 3) % shirts.length]);
+    torso.position.y = 1.02;
+    const head = new THREE.Mesh(headGeo, skins[(j + 2) % skins.length]);
+    head.position.y = 1.48;
+    const legL = new THREE.Mesh(legGeo, pants[j % pants.length]);
+    legL.position.set(-0.09, 0.38, 0.04);
+    const legR = new THREE.Mesh(legGeo, pants[(j + 1) % pants.length]);
+    legR.position.set(0.09, 0.38, -0.04);
+    const armL = new THREE.Mesh(armGeo, shirts[(j + 3) % shirts.length]);
+    armL.position.set(-0.26, 1.05, 0);
+    armL.rotation.z = 0.28;
+    const armR = new THREE.Mesh(armGeo, shirts[(j + 3) % shirts.length]);
+    armR.position.set(0.26, 1.05, 0);
+    armR.rotation.z = -0.28;
+    person.add(torso, head, legL, legR, armL, armR);
+    scene.add(person);
+  }
+"""
+s = s[:end] + "\n" + crowd + s[end:]
+p.write_text(s, encoding="utf-8")
+
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
