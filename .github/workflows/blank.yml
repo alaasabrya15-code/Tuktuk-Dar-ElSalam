@@ -1,9 +1,0 @@
-name: CI
-on:
-  workflow_dispatch:
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo "CI workflow is manual-only; APK builds run in build-android-apk.yml."
