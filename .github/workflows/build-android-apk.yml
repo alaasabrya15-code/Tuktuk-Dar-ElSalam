@@ -1,0 +1,106 @@
+name: Build Tuktuk Dar ElSalam APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'grok-workspace.zip'
+      - '.github/workflows/build-android-apk.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract project
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          mkdir -p project
+          unzip -q grok-workspace.zip -d project
+          test -f project/package.json
+          test -f project/package-lock.json
+          test -f project/vite.apk.config.ts
+          test -f project/apk/index.html
+      - name: Build web game
+        working-directory: project
+        run: |
+          npm ci
+          npx vite build --config vite.apk.config.ts
+      - name: Create Android WebView wrapper
+        run: |
+          mkdir -p android-app/app/src/main/assets android-app/app/src/main/java/com/darsalam/tuktuk
+          cp -R project/apk/dist/. android-app/app/src/main/assets/
+          cat > android-app/settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = 'TuktukDarElSalam'
+          include ':app'
+          EOF
+          cat > android-app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+          cat > android-app/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+          cat > android-app/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.darsalam.tuktuk'
+              compileSdk 35
+              defaultConfig { applicationId 'com.darsalam.tuktuk'; minSdk 23; targetSdk 28; versionCode 1; versionName '1.0' }
+          }
+          EOF
+          cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="توكتوك دار السلام" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat > android-app/app/src/main/java/com/darsalam/tuktuk/MainActivity.java <<'EOF'
+          package com.darsalam.tuktuk;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.webkit.WebView;
+          import android.webkit.WebSettings;
+          public class MainActivity extends Activity {
+              @Override public void onCreate(Bundle state) {
+                  super.onCreate(state);
+                  getWindow().getDecorView().setSystemUiVisibility(5894 | 1024 | 512);
+                  WebView web = new WebView(this);
+                  WebSettings settings = web.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setMediaPlaybackRequiresUserGesture(false);
+                  web.setWebViewClient(new android.webkit.WebViewClient());
+                  setContentView(web);
+                  web.loadUrl("file:///android_asset/index.html");
+              }
+              @Override public void onBackPressed() { super.onBackPressed(); }
+          }
+          EOF
+      - name: Build APK
+        run: |
+          cd android-app
+          gradle wrapper --gradle-version 8.9
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuktuk-Dar-ElSalam-APK
+          path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
