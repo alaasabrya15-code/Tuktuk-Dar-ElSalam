@@ -1,5 +1,5 @@
 name: Build Tuktuk Dar ElSalam APK
-# Rebuild when the Fayoum Street visual script changes.
+# Rebuild when the Fayoum Street visual script changes (stop mapping fixed).
 on:
   workflow_dispatch:
   push:
