@@ -6,6 +6,7 @@ on:
       - 'grok-workspace.zip'
       - 'tuktuk-enhancements.patch'
       - 'tuktuk-persistence.patch'
+      - 'tuktuk-fayoum-upgrade.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -35,6 +36,7 @@ jobs:
         run: |
           patch -d project -p1 < tuktuk-enhancements.patch
           patch -d project -p1 < tuktuk-persistence.patch
+          patch -d project -p1 < tuktuk-fayoum-upgrade.patch
           cd project
           zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
       - name: Build web game
