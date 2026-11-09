@@ -62,7 +62,7 @@ jobs:
               'player locked to tuk-tuk': 'vehicle: "tuktuk"' in engine and 'swapPlayer("tuktuk", cfg.paint)' in engine,
               'horn and synthesized engine audio': 'horn() {' in engine and 'engine(speed: number, throttle: number)' in engine,
               'suspension response': 'suspensionOffset' in engine and 'suspensionVelocity' in engine,
-              'Egyptian street frontage and landmarks': 'landmarkLabel' in scene and 'facadeAwnings' in scene,
+              'Egyptian street frontage and landmarks': 'landmarkLabel' in scene and 'awningMats' in scene,
               'market and parked traffic dressing': 'Produce market cluster' in scene and 'Parked private cars' in scene,
               'tuk-tuk only UI': 'مركبتك: التوكتوك' in ui and 'اختار مركبتك' not in ui,
           }
