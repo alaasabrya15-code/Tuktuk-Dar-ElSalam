@@ -631,4 +631,70 @@ s = s[:end] + "\n" + crowd + s[end:]
 p.write_text(s, encoding="utf-8")
 
 
+
+# Face the public-service and school entrances toward the street, not along it.
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+for marker in [
+    'put(1, 13.2, (g) => {',
+    'put(2, 13.2, (g) => {',
+    'put(3, 13.4, (g) => {',
+    'put(4, 12.2, (g) => {',
+    'put(5, 13.4, (g) => {',
+    'put(6, 13.6, (g) => {',
+    'put(8, 12.4, (g) => {',
+]:
+    if s.count(marker) != 1:
+        raise SystemExit(f"fayoum.ts: expected one landmark orientation marker: {marker}")
+    s = s.replace(marker, marker + "\n    g.rotation.y += Math.PI / 2;", 1)
+
+# Palm trees run along the school sidewalk, not across the roadway.
+s = s.replace("const x = -18 + i * 6;", "const z = -18 + i * 6;", 1)
+s = s.replace("trunk.position.set(x, h / 2, 0);", "trunk.position.set(0, h / 2, z);", 1)
+s = s.replace("leaf.position.set(x + Math.cos(angle) * 1.25, h + 0.45, Math.sin(angle) * 1.25);",
+              "leaf.position.set(Math.cos(angle) * 1.25, h + 0.45, z + Math.sin(angle) * 1.25);", 1)
+s = s.replace("compound.rotation.y = p.yaw;", "compound.rotation.y = p.yaw + Math.PI / 2;", 1)
+
+# Represent the six-school campus as a connected frontage, not just two isolated blocks.
+school_campus = """
+  {
+    const p = spot(track.stops[5].s, 22.5);
+    const campus = new THREE.Group();
+    campus.position.set(p.x, 0, p.z);
+    campus.rotation.y = p.yaw + Math.PI / 2;
+    const wallMat = new THREE.MeshStandardMaterial({ color: "#d9c7a6", roughness: 0.9 });
+    const blue = new THREE.MeshStandardMaterial({ color: "#174c78", roughness: 0.7 });
+    const windowMat = new THREE.MeshStandardMaterial({ color: "#52798a", roughness: 0.3, metalness: 0.1 });
+    for (let i = 0; i < 4; i++) {
+      const z = (i - 1.5) * 11;
+      const block = new THREE.Mesh(new THREE.BoxGeometry(7.8, 6.2 + (i % 2) * 1.2, 8.4), wallMat);
+      block.position.set(0, 3.1 + (i % 2) * 0.6, z);
+      const fascia = new THREE.Mesh(new THREE.BoxGeometry(8, 0.55, 8.55), blue);
+      fascia.position.set(0, 5.6 + (i % 2) * 1.2, z);
+      campus.add(block, fascia);
+      for (const zz of [z - 2.3, z, z + 2.3]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 1.25), windowMat);
+        win.position.set(-3.96, 3.7, zz);
+        campus.add(win);
+      }
+    }
+    const fenceMat = new THREE.MeshStandardMaterial({ color: "#4b5359", roughness: 0.7, metalness: 0.25 });
+    for (let i = 0; i < 17; i++) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.65, 0.12), fenceMat);
+      post.position.set(-5.1, 0.82, -22 + i * 2.75);
+      campus.add(post);
+    }
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 44), fenceMat);
+    rail.position.set(-5.1, 1.45, 0);
+    campus.add(rail);
+    scene.add(campus);
+  }
+"""
+marker = "\n  const bumpMat = new THREE.MeshStandardMaterial({ map: bumpTexture() ?? undefined, roughness: 0.55 });"
+if s.count(marker) != 1:
+    raise SystemExit("fayoum.ts: school campus insertion point not unique")
+s = s.replace(marker, "\n" + school_campus + marker, 1)
+p.write_text(s, encoding="utf-8")
+
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
