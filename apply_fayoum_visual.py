@@ -797,4 +797,83 @@ s = s.replace(marker, "\n" + extras + marker, 1)
 p.write_text(s, encoding="utf-8")
 
 
+
+# Add visible architectural depth to the generated Egyptian apartment blocks.
+p = root / "src/game/fayoum.ts"
+s = p.read_text(encoding="utf-8")
+marker = "\n}\n\nconst SHOPS = ["
+if s.count(marker) != 1:
+    raise SystemExit("fayoum.ts: unique dressFayoum closing marker missing")
+detail = """
+  // Projecting balconies, metal balustrades, drain pipes, shop canopies and rooftop tanks.
+  const concreteTrim = new THREE.MeshStandardMaterial({ color: "#aaa092", roughness: 0.94 });
+  const iron = new THREE.MeshStandardMaterial({ color: "#343a3e", roughness: 0.58, metalness: 0.32 });
+  const pipeMat = new THREE.MeshStandardMaterial({ color: "#77736b", roughness: 0.72, metalness: 0.18 });
+  const tankMat = new THREE.MeshStandardMaterial({ color: "#c8c9c3", roughness: 0.62 });
+  const awnings = ["#b83c32", "#e5d5b5", "#176b56", "#d6a52d", "#315b78"].map(
+    (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.86, side: THREE.DoubleSide }),
+  );
+  for (let i = 0; i < pts.length; i += 20) {
+    const p = pts[i];
+    const hsh = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
+    const floors = 3 + Math.floor(hsh * 5);
+    const height = floors * 2.75 + (hsh > 0.7 ? 1.2 : 0);
+    const depth = 8.5 + hsh * 3.5;
+    const width = 5.4 + (1 - hsh) * 2.2;
+    const next = pts[(i + 8) % pts.length];
+    const bend = Math.abs(((next.yaw - p.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    if (bend > 0.22) continue;
+    for (const side of [-1, 1]) {
+      const g = new THREE.Group();
+      g.position.set(p.x + Math.cos(p.yaw) * side * (ROAD_HALF + 7.2 + hsh * 0.8), 0,
+        p.z - Math.sin(p.yaw) * side * (ROAD_HALF + 7.2 + hsh * 0.8));
+      g.rotation.y = p.yaw;
+      const fx = side * (width / 2 + 0.08);
+      for (let floor = 1; floor < floors; floor++) {
+        if ((floor + i) % 3 === 0) continue;
+        const y = floor * 2.75 - 0.12;
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, depth * 0.7), concreteTrim);
+        slab.position.set(fx + side * 0.18, y, 0);
+        g.add(slab);
+        for (let n = 0; n <= 8; n++) {
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.72, 0.055), iron);
+          bar.position.set(fx + side * 0.5, y + 0.48, -depth * 0.35 + depth * 0.7 * n / 8);
+          g.add(bar);
+        }
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, depth * 0.7), iron);
+        top.position.set(fx + side * 0.5, y + 0.84, 0);
+        g.add(top);
+      }
+      for (const z of [-depth * 0.43, depth * 0.43]) {
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, height, 7), pipeMat);
+        pipe.position.set(fx + side * 0.12, height / 2, z);
+        g.add(pipe);
+      }
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, depth * 0.78), awnings[(i + (side > 0 ? 1 : 0)) % awnings.length]);
+      canopy.position.set(fx + side * 0.58, 3.08, 0);
+      g.add(canopy);
+      for (const z of [-depth * 0.34, depth * 0.34]) {
+        const support = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.05, 6), iron);
+        support.position.set(fx + side * 0.92, 2.55, z);
+        g.add(support);
+      }
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.66, 1.25, 10), tankMat);
+      tank.position.set(side * width * 0.12, height + 0.62, depth * 0.18);
+      g.add(tank);
+      scene.add(g);
+    }
+  }
+"""
+s = s.replace(marker, "\n" + detail + marker, 1)
+p.write_text(s, encoding="utf-8")
+
+# More natural warm daylight and less aggressive atmospheric haze.
+replace_once("src/game/engine.ts", '  renderer.toneMappingExposure = 1.18;', '  renderer.toneMappingExposure = 1.08;')
+replace_once("src/game/engine.ts", '  scene.fog = new THREE.Fog("#d8cbb8", 48, 260);', '  scene.fog = new THREE.Fog("#cbbda9", 72, 390);')
+replace_once("src/game/engine.ts",
+'''  const hemi = new THREE.HemisphereLight("#f7f0e6", "#9a8468", 0.95);
+  const sun = new THREE.DirectionalLight("#ffe8c4", 1.85);''',
+'''  const hemi = new THREE.HemisphereLight("#fff4e3", "#82715d", 1.02);
+  const sun = new THREE.DirectionalLight("#ffe6c2", 1.62);''')
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
