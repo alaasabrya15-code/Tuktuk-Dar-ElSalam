@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'grok-workspace.zip'
+      - 'tuktuk-enhancements.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -29,6 +30,11 @@ jobs:
           test -f project/package-lock.json
           test -f project/vite.apk.config.ts
           test -f project/apk/index.html
+      - name: Apply game enhancements without removing original content
+        run: |
+          patch -d project -p1 < tuktuk-enhancements.patch
+          cd project
+          zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
       - name: Build web game
         working-directory: project
         run: |
@@ -102,5 +108,12 @@ jobs:
         with:
           name: Tuktuk-Dar-ElSalam-APK
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuktuk-Dar-ElSalam-Updated-Project
+          path: Tuktuk-Dar-ElSalam-Updated-Project.zip
           if-no-files-found: error
           retention-days: 14
