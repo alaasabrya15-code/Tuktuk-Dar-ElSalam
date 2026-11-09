@@ -171,7 +171,7 @@ dense = """  // Dense two-sided Dar El Salam frontage: one building about every 
       const height = floors * 2.75 + (hsh > 0.7 ? 1.2 : 0);
       const depth = 8.5 + hsh * 3.5;
       const width = 5.4 + (1 - hsh) * 2.2;
-      dummy.position.set(p.x + rx * side * (22.5 + hsh * 3), height / 2, p.z + rz * side * (22.5 + hsh * 3));
+      dummy.position.set(p.x + rx * side * (ROAD_HALF + 7.2 + hsh * 0.8), height / 2, p.z + rz * side * (ROAD_HALF + 7.2 + hsh * 0.8));
       dummy.rotation.set(0, p.yaw + (hsh - 0.5) * 0.08, 0);
       dummy.scale.set(width, height, depth);
       dummy.updateMatrix();
@@ -290,5 +290,11 @@ replace_once("src/game/fayoum.ts",
   g.fillRect(0, 82, 512, 8);
   g.fillStyle = "rgba(235,228,211,0.24)";
   g.fillRect(0, 4, 512, 5);""")
+
+
+# Move building frontages to the outer sidewalk edge instead of leaving a wide empty setback.
+replace_once("src/game/fayoum.ts",
+"""dummy.position.set(p.x + rx * side * (22.5 + hsh * 3), height / 2, p.z + rz * side * (22.5 + hsh * 3));""",
+"""dummy.position.set(p.x + rx * side * (ROAD_HALF + 7.2 + hsh * 0.8), height / 2, p.z + rz * side * (ROAD_HALF + 7.2 + hsh * 0.8));""")
 
 print("Applied Fayoum Street corridor and visual frontage changes.")
