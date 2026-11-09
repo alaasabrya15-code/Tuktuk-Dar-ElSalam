@@ -185,9 +185,6 @@ jobs:
                       @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                           return loader.shouldInterceptRequest(request.getUrl());
                       }
-                      @Override public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
-                          Log.e("TuktukWeb", "Load error: " + request.getUrl() + " - " + error.getDescription());
-                      }
                   });
                   setContentView(web);
                   web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
