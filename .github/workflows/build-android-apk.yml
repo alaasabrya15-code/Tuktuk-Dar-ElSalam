@@ -1,5 +1,5 @@
 name: Build Tuktuk Dar ElSalam APK
-# Rebuild when the Fayoum Street visual patch changes (route hunk counts validated).
+# Rebuild when the Fayoum Street visual patch changes (route patch offsets aligned).
 on:
   workflow_dispatch:
   push:
