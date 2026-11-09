@@ -95,7 +95,9 @@ jobs:
           assert len(styles) == 1, f"Expected one stylesheet, got {len(styles)}"
           assert engines[0].stat().st_size > 500_000, "Game engine bundle is unexpectedly small"
           assert apps[0].stat().st_size > 150_000, "Application bundle is unexpectedly small"
-          assert engines[0].name in html and apps[0].name in html and styles[0].name in html, "index.html does not reference all built bundles"
+          assert apps[0].name in html and styles[0].name in html, "index.html does not reference the app bundle and stylesheet"
+          app_js = apps[0].read_text(encoding="utf-8")
+          assert engines[0].name in app_js, "App bundle does not reference the game engine chunk"
           print(f"PASS: game engine {engines[0].stat().st_size:,} bytes")
           print(f"PASS: app code {apps[0].stat().st_size:,} bytes")
           print(f"PASS: styles {styles[0].stat().st_size:,} bytes")
