@@ -15,6 +15,7 @@ on:
       - 'apply_fayoum_visual.py'
       - 'tuktuk-realism-detail.patch'
       - 'tuktuk-instancing-fix.patch'
+      - 'tuktuk-runtime-fixes.patch'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -53,11 +54,14 @@ jobs:
           python3 apply_fayoum_visual.py project
           patch -d project -p1 < tuktuk-realism-detail.patch
           patch -d project -p1 < tuktuk-instancing-fix.patch
+          patch -d project -p1 < tuktuk-runtime-fixes.patch
           python3 - <<'PY'
           from pathlib import Path
           engine = Path('project/src/game/engine.ts').read_text(encoding='utf-8')
           ui = Path('project/src/components/dar-salam.tsx').read_text(encoding='utf-8')
           scene = Path('project/src/game/fayoum.ts').read_text(encoding='utf-8')
+          assert 'game.current' not in ui, 'Undefined game ref remains in UI controls'
+          assert 'gameRef.current' in ui, 'UI control ref was not repaired'
           checks = {
               'player locked to tuk-tuk': 'vehicle: "tuktuk"' in engine and 'swapPlayer("tuktuk", cfg.paint)' in engine,
               'horn and synthesized engine audio': 'horn() {' in engine and 'engine(speed: number, throttle: number)' in engine,
