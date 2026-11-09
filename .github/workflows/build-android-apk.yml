@@ -1,5 +1,5 @@
 name: Build Tuktuk Dar ElSalam APK
-# Rebuild when the Fayoum Street visual patch changes (route patch offsets aligned).
+# Rebuild when the Fayoum Street visual script changes.
 on:
   workflow_dispatch:
   push:
@@ -11,6 +11,7 @@ on:
       - 'tuktuk-fayoum-landmarks.patch'
       - 'tuktuk-fayoum-stop-names.patch'
       - 'tuktuk-fayoum-full-visual.patch'
+      - 'apply_fayoum_visual.py'
       - '.github/workflows/build-android-apk.yml'
 permissions:
   contents: read
@@ -42,7 +43,7 @@ jobs:
           patch -d project -p1 < tuktuk-persistence.patch
           patch -d project -p1 < tuktuk-fayoum-upgrade.patch
           patch -d project -p1 < tuktuk-fayoum-stop-names.patch
-          patch -d project -p1 < tuktuk-fayoum-full-visual.patch
+          python3 apply_fayoum_visual.py project
           cd project
           zip -qr ../Tuktuk-Dar-ElSalam-Updated-Project.zip . -x 'node_modules/*' '.git/*'
       - name: Build web game
