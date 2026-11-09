@@ -810,7 +810,7 @@ detail = """
   const iron = new THREE.MeshStandardMaterial({ color: "#343a3e", roughness: 0.58, metalness: 0.32 });
   const pipeMat = new THREE.MeshStandardMaterial({ color: "#77736b", roughness: 0.72, metalness: 0.18 });
   const tankMat = new THREE.MeshStandardMaterial({ color: "#c8c9c3", roughness: 0.62 });
-  const awnings = ["#b83c32", "#e5d5b5", "#176b56", "#d6a52d", "#315b78"].map(
+  const facadeAwnings = ["#b83c32", "#e5d5b5", "#176b56", "#d6a52d", "#315b78"].map(
     (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.86, side: THREE.DoubleSide }),
   );
   for (let i = 0; i < pts.length; i += 200) {
@@ -849,7 +849,7 @@ detail = """
         pipe.position.set(fx + side * 0.12, height / 2, z);
         g.add(pipe);
       }
-      const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, depth * 0.78), awnings[(i + (side > 0 ? 1 : 0)) % awnings.length]);
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.12, depth * 0.78), facadeAwnings[(i + (side > 0 ? 1 : 0)) % facadeAwnings.length]);
       canopy.position.set(fx + side * 0.58, 3.08, 0);
       g.add(canopy);
       for (const z of [-depth * 0.34, depth * 0.34]) {
