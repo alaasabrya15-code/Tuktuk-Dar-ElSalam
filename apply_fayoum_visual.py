@@ -255,4 +255,40 @@ if s.count(needle) != 1:
 s = s.replace(needle, visuals, 1)
 p.write_text(s, encoding="utf-8")
 
+
+# Keep storefront labels generic unless a specific business name is verified.
+replace_once("src/game/fayoum.ts",
+"""  { name: "صيدلية الشفاء", sub: "٢٤ ساعة", bg: "#c0392b", fg: "#ffffff" },""",
+"""  { name: "صيدلية", sub: "خدمة يومية", bg: "#c0392b", fg: "#ffffff" },""")
+replace_once("src/game/fayoum.ts",
+"""  { name: "قهوة الحج", sub: "شاي · قهوة", bg: "#6e2c00", fg: "#f6f1e7" },""",
+"""  { name: "قهوة", sub: "شاي · قهوة", bg: "#6e2c00", fg: "#f6f1e7" },""")
+replace_once("src/game/fayoum.ts",
+"""  // brick / concrete top band
+  g.fillStyle = "#9a4f3a";
+  g.fillRect(0, 0, 512, 90);
+  for (let y = 4; y < 86; y += 14) {
+    g.fillStyle = y % 28 === 4 ? "#7e3e2e" : "#b05a45";
+    g.fillRect(0, y, 512, 9);
+    g.fillStyle = "#5e3024";
+    g.fillRect(0, y + 9, 512, 3);
+    // brick offsets
+    for (let x = (y % 28 === 4 ? 0 : 28); x < 512; x += 56) {
+      g.fillStyle = "rgba(0,0,0,0.12)";
+      g.fillRect(x, y, 2, 12);
+    }
+  }""",
+"""  // Weathered exposed-concrete parapet, common on unfinished upper floors.
+  g.fillStyle = "#8f8c83";
+  g.fillRect(0, 0, 512, 90);
+  for (let i = 0; i < 95; i++) {
+    const shade = 95 + (i * 17) % 55;
+    g.fillStyle = "rgba(110,108,102,0.18)";
+    g.fillRect((i * 47) % 512, (i * 29) % 88, 10 + (i % 24), 3 + (i % 7));
+  }
+  g.fillStyle = "#6f6d66";
+  g.fillRect(0, 82, 512, 8);
+  g.fillStyle = "rgba(235,228,211,0.24)";
+  g.fillRect(0, 4, 512, 5);""")
+
 print("Applied Fayoum Street corridor and visual frontage changes.")
