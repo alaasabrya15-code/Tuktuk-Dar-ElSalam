@@ -813,7 +813,7 @@ detail = """
   const awnings = ["#b83c32", "#e5d5b5", "#176b56", "#d6a52d", "#315b78"].map(
     (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.86, side: THREE.DoubleSide }),
   );
-  for (let i = 0; i < pts.length; i += 20) {
+  for (let i = 0; i < pts.length; i += 200) {
     const p = pts[i];
     const hsh = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
     const floors = 3 + Math.floor(hsh * 5);
