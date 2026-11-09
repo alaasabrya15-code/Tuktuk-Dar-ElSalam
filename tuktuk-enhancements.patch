@@ -1,0 +1,92 @@
+--- a/src/game/engine.ts
++++ b/src/game/engine.ts
+@@ -863,7 +863,7 @@
+   }
+ 
+   function specNow() {
+-    const base = vehicleById("tuktuk");
++    const base = vehicleById(cfg.vehicle);
+     const u = save.upgrades;
+     return {
+       ...base,
+@@ -871,7 +871,7 @@
+       accel: base.accel + u.motor * 1.1,
+       turn: base.turn + u.tires * 0.18,
+       fare: base.fare * (1 + u.seats * 0.22),
+-      name: "توكتوك",
++      name: base.name,
+     };
+   }
+ 
+@@ -960,9 +960,9 @@
+   }
+ 
+   function start(next: PreviewCfg) {
+-    cfg = { ...next, vehicle: "tuktuk" };
++    cfg = { ...next };
+     sfx.on = cfg.sound;
+-    swapPlayer("tuktuk", cfg.paint);
++    swapPlayer(cfg.vehicle, cfg.paint);
+     phase = "play";
+     const startS = track.stops[0].s + 18;
+     resetRun(startS);
+@@ -1800,12 +1800,13 @@
+     getHud: hud,
+     setPreview: (next) => {
+       const paintChanged = next.paint !== cfg.paint;
++      const vehicleChanged = next.vehicle !== cfg.vehicle;
+       const nightChanged = next.night !== cfg.night;
+-      cfg = { ...next, vehicle: "tuktuk" };
++      cfg = { ...next };
+       sfx.on = cfg.sound;
+       save.sound = cfg.sound;
+       writeSave(save);
+-      if (paintChanged && phase === "menu") swapPlayer("tuktuk", cfg.paint);
++      if ((paintChanged || vehicleChanged) && phase === "menu") swapPlayer(cfg.vehicle, cfg.paint);
+       if (nightChanged) applyDusk(duskNow());
+       if (phase === "menu") publish();
+     },
+--- a/src/components/dar-salam.tsx
++++ b/src/components/dar-salam.tsx
+@@ -21,6 +21,7 @@
+   JOBS_NEED,
+   MODES,
+   PAINTS,
++  VEHICLES,
+   RENT,
+   UPGRADES,
+   type Hud,
+@@ -164,7 +165,32 @@
+                 ))}
+               </div>
+ 
+-              <p className="mt-4 text-xs font-bold text-muted">لون التوكتوك</p>
++              <div className="mt-4">
++                <div className="flex items-center justify-between gap-2">
++                  <p className="text-xs font-bold text-muted">اختار مركبتك</p>
++                  <span className="text-[11px] text-nile">كل المركبات متاحة للتجربة</span>
++                </div>
++                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
++                  {VEHICLES.map((v) => (
++                    <button
++                      key={v.id}
++                      type="button"
++                      onClick={() => patch({ vehicle: v.id })}
++                      className={cfg.vehicle === v.id
++                        ? "rounded-xl border border-amber bg-amber/15 p-3 text-right ring-1 ring-amber"
++                        : "rounded-xl border border-line bg-panel-2 p-3 text-right"}
++                    >
++                      <span className="block text-sm font-extrabold">{v.name}</span>
++                      <span className="mt-1 block text-[11px] text-muted">{v.blurb}</span>
++                      <span className="mt-2 flex justify-between text-[10px] text-muted">
++                        <span>سرعة {v.max}</span><span>مقاعد {v.seats}</span>
++                      </span>
++                    </button>
++                  ))}
++                </div>
++              </div>
++
++              <p className="mt-4 text-xs font-bold text-muted">لون المركبة</p>
+               <div className="mt-2 flex flex-wrap items-center gap-2">
+                 {PAINTS.map((p) => (
+                   <button
